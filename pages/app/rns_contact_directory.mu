@@ -98,6 +98,18 @@ def db_commit():
             DB.rollback()
 
 
+def db_sanitize(value):
+    value = str(value)
+    value = value.replace('\\', "")
+    value = value.replace("\0", "")
+    value = value.replace("\n", "")
+    value = value.replace("\r", "")
+    value = value.replace("'", "")
+    value = value.replace('"', "")
+    value = value.replace("\x1a", "")
+    return value
+
+
 def db_init(init=True):
    pass
 
@@ -121,31 +133,31 @@ def db_filter(filter):
     querys = []
 
     if "display_name" in filter and filter["display_name"] != None:
-        querys.append("devices.device_display_name ILIKE '%"+filter["display_name"]+"%'")
+        querys.append("devices.device_display_name ILIKE '%"+db_sanitize(filter["display_name"])+"%'")
 
     if "city" in filter and filter["city"] != None:
-        querys.append("members.member_city ILIKE '%"+filter["city"]+"%'")
+        querys.append("members.member_city ILIKE '%"+db_sanitize(filter["city"])+"%'")
 
     if "country" in filter and filter["country"] != None:
-        querys.append("members.member_country = '"+filter["country"]+"'")
+        querys.append("members.member_country = '"+db_sanitize(filter["country"])+"'")
 
     if "state" in filter and filter["state"] != None:
-        querys.append("members.member_state = '"+filter["state"]+"'")
+        querys.append("members.member_state = '"+db_sanitize(filter["state"])+"'")
 
     if "occupation" in filter and filter["occupation"] != None:
-        querys.append("members.member_occupation ILIKE '%"+filter["occupation"]+"%'")
+        querys.append("members.member_occupation ILIKE '%"+db_sanitize(filter["occupation"])+"%'")
 
     if "skills" in filter and filter["skills"] != None:
-        querys.append("members.member_skills ILIKE '%"+filter["skills"]+"%'")
+        querys.append("members.member_skills ILIKE '%"+db_sanitize(filter["skills"])+"%'")
 
     if "tasks" in filter and filter["tasks"] != None:
-        querys.append("members.member_tasks ILIKE '%"+filter["tasks"]+"%'")
+        querys.append("members.member_tasks ILIKE '%"+db_sanitize(filter["tasks"])+"%'")
 
     if "wallet_address" in filter and filter["wallet_address"] != None:
-        querys.append("members.member_wallet_address ILIKE '%"+filter["wallet_address"]+"%'")
+        querys.append("members.member_wallet_address ILIKE '%"+db_sanitize(filter["wallet_address"])+"%'")
 
     if "auth_role" in filter and filter["auth_role"] != None:
-        querys.append("members.member_auth_role = '"+str(filter["auth_role"])+"'")
+        querys.append("members.member_auth_role = '"+db_sanitize(filter["auth_role"])+"'")
 
     if "ts_min" in filter and filter["ts_min"] != None:
         querys.append("members.member_ts_add >= "+datetime.datetime.fromtimestamp(filter["ts_min"]).strftime('%Y-%m-%d %H:%M:%S'))
@@ -187,7 +199,7 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
     if limit == None or limit_start == None:
         query_limit = ""
     else:
-        query_limit = " LIMIT "+str(limit)+" OFFSET "+str(limit_start)
+        query_limit = " LIMIT "+db_sanitize(limit)+" OFFSET "+db_sanitize(limit_start)
 
     if search:
         search = "%"+search+"%"

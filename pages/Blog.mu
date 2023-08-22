@@ -32,7 +32,7 @@ DATA_COUNT_SAVE = 0 #0=No limit
 DATA_COUNT_VIEW = 50 #0=No limit
 
 # Sorting
-SORT = "DESC" #ASC/DESC
+SORT = "ASC" #ASC/DESC
 
 # Preview text length
 TEXT_LENGHT_VIEW = 256
