@@ -39,6 +39,39 @@ FILES_INDEX_DEPTH = 255 #0=root, 255=all
 
 # Screen template - Main
 TEMPLATE_MAIN = """
+>`cFDG-Kommunikator
+>>Willkommen auf der offiziellen Seite der FDG-Kommunikator App auf Sebastian's Knoten.
+
+>>FDG-Wiki
+Offizieller Klon der Online Wiki
+`[FDG-Wiki`:/page/FDG-Wiki.mu]`
+
+>>Blog
+News und Infos rund um den Kommunikator und Technik finden Sie in dem
+`[Blog`:/page/Blog.mu]`
+
+>>Fehler melden
+Sollten Sie einen Fehler mit der App haben, dann melden Sie diesen bitte in dem
+`[Bug-Tracker (Fehler-Tracker)`:/page/FDG-Kommunikator Bug-Tracker.mu]`
+
+>>Ideen und Vorschläge
+Sollten Sie Ideen und Vorschläge haben, dann melden Sie diesen bitte
+`[!Hier!`:/page/FDG-Kommunikator Feature-Requests.mu]`
+
+>>Gästebuch
+Sagen Sie Hallo und hinterlassen eine Nachricht in dem
+`[Gästebuch`:/page/Gästebuch.mu]`
+
+>>Kontakt
+Sollten Sie direkten Kontakt mit mir wünschen, dann bin ich unter folgender LXMF Adresse zu erreichen.
+`[lxmf@dece1ff47066e7e2ef55bf56e8b69aad]`
+Bitte nur bei wirklich dringenden Themen kontaktieren! Alles andere über den Bug-Tracker und Feature-Request. Danke!
+
+>>Infos
+Hier gibt es diverse Seiten und Dateien zum Testen der Browser Funktionen. Diese sind in dem Index zu finden.
+
+Außerdem werden Quelltexte zur eigenen Verwendung bereitgestellt. Siehe weiter unten in dem Datei-Index.
+`c
 {entrys}
 """
 

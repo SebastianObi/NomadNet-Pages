@@ -55,7 +55,7 @@ import subprocess
 FILE = os.path.splitext(os.path.basename(__file__))[0]
 
 if PATH == None:
-    PATH = os.path.expanduser("~")+"/."+FILE
+    PATH = os.path.expanduser("~")+"/.config/"+FILE
 
 
 ##############################################################################################################

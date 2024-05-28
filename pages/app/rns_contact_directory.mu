@@ -26,9 +26,12 @@ KEY_DATA = "var_data"
 KEY_ENTRYS = "rx_entrys"
 KEY_ENTRYS_COUNT = "rx_entrys_count"
 KEY_RESULT = "result"
+KEY_CMD = "cmd"
+KEY_CMD_ENTRY = "cmd_entry"
+KEY_CMD_RESULT = "cmd_result"
 
-RESULT_OK    = 0x01
 RESULT_ERROR = 0x00
+RESULT_OK    = 0x01
 
 # Database
 DB_HOST = "192.168.10.229"
@@ -37,6 +40,13 @@ DB_USER = "postgres"
 DB_PASSWORD = "p@ssw0rd"
 DB_DATABASE = "testdb"
 DB_ENCODING = "utf8"
+
+# Admin destinations (LXMF-Adresses)
+ADMINS = ["dece1ff47066e7e2ef55bf56e8b69aad"] #Array
+
+# Admin CMDs
+ADMINS_CMD = [] #Array
+ADMINS_CMD_ENTRY = ["role_0", "role_1", "role_2", "role_3", "state_0", "state_1", "state_2", "delete"] #Array
 
 
 ##############################################################################################################
@@ -67,7 +77,7 @@ import RNS.vendor.umsgpack as umsgpack
 FILE = os.path.splitext(os.path.basename(__file__))[0]
 
 if PATH == None:
-    PATH = os.path.expanduser("~")+"/."+FILE
+    PATH = os.path.expanduser("~")+"/.config/"+FILE
 
 DB = None
 
@@ -235,6 +245,28 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
         return data
 
 
+def db_count(filter=None, search=None):
+    db = db_connect()
+    dbc = db.cursor()
+
+    query_filter = db_filter(filter)
+
+    if search:
+        search = "%"+search+"%"
+        query = "SELECT COUNT(*) FROM members LEFT JOIN devices ON devices.device_user_id = members.member_user_id WHERE members.member_user_id != '' AND (devices.device_display_name ILIKE %s OR members.member_city ILIKE %s OR members.member_occupation ILIKE %s OR members.member_skills ILIKE %s OR members.member_tasks ILIKE %s)"+query_filter
+        dbc.execute(query, (search, search, search, search, search))
+    else:
+        query = "SELECT COUNT(*) FROM members WHERE member_user_id != ''"+query_filter
+        dbc.execute(query)
+
+    result = dbc.fetchall()
+
+    if len(result) < 1:
+        return 0
+    else:
+        return result[0][0]
+
+
 def db_get(dest):
     db = db_connect()
     dbc = db.cursor()
@@ -264,26 +296,72 @@ def db_get(dest):
         return data
 
 
-def db_count(filter=None, search=None):
+def db_set(dest, role=None, state=None):
     db = db_connect()
     dbc = db.cursor()
 
-    query_filter = db_filter(filter)
+    if role != None:
+        query = "UPDATE members SET member_ts_edit = %s, member_auth_role = %s, member_update = '1' WHERE member_user_id = (SELECT device_user_id FROM devices WHERE device_rns_id = %s)"
+        dbc.execute(query, (datetime.datetime.now(datetime.timezone.utc), str(role), RNS.hexrep(dest, False)))
 
-    if search:
-        search = "%"+search+"%"
-        query = "SELECT COUNT(*) FROM members LEFT JOIN devices ON devices.device_user_id = members.member_user_id WHERE members.member_user_id != '' AND (devices.device_display_name ILIKE %s OR members.member_city ILIKE %s OR members.member_occupation ILIKE %s OR members.member_skills ILIKE %s OR members.member_tasks ILIKE %s)"+query_filter
-        dbc.execute(query, (search, search, search, search, search))
-    else:
-        query = "SELECT COUNT(*) FROM members WHERE member_user_id != ''"+query_filter
-        dbc.execute(query)
+    if state != None:
+        query = "UPDATE members SET member_ts_edit = %s, member_auth_state = %s, member_update = '1' WHERE member_user_id = (SELECT device_user_id FROM devices WHERE device_rns_id = %s)"
+        dbc.execute(query, (datetime.datetime.now(datetime.timezone.utc), str(state), RNS.hexrep(dest, False)))
 
+    db_commit()
+
+
+def db_delete(dest):
+    db = db_connect()
+    dbc = db.cursor()
+
+    query = "SELECT device_user_id FROM devices WHERE device_rns_id = %s"
+    dbc.execute(query, (RNS.hexrep(dest, False),))
     result = dbc.fetchall()
 
-    if len(result) < 1:
-        return 0
+    if len(result) == 1:
+        query = "DELETE FROM devices WHERE device_user_id = %s"
+        dbc.execute(query, (result[0][0],))
+
+        query = "DELETE FROM members WHERE member_user_id = %s"
+        dbc.execute(query, (result[0][0],))
+
+    db_commit()
+
+
+##############################################################################################################
+# CMD
+
+def cmd(cmd):
+    if cmd[0] == "role_0":
+        db_set(cmd[1], role=0)
+
+    if cmd[0] == "role_1":
+        db_set(cmd[1], role=1)
+
+    if cmd[0] == "role_2":
+        db_set(cmd[1], role=2)
+
+    if cmd[0] == "role_3":
+        db_set(cmd[1], role=3)
+
+    if cmd[0] == "state_0":
+        db_set(cmd[1], state=0)
+
+    if cmd[0] == "state_1":
+        db_set(cmd[1], state=1)
+
+    if cmd[0] == "state_2":
+        db_set(cmd[1], state=2)
+
+    if cmd[0] == "delete":
+        db_delete(cmd[1])
+
+    entry = db_get(cmd[1])
+    if entry:
+        return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [entry]}
     else:
-        return result[0][0]
+        return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [{"dest": cmd[1], "ts_edit": 0}]}
 
 
 ##############################################################################################################
@@ -293,8 +371,16 @@ def db_count(filter=None, search=None):
 data_return = {}
 
 try:
+    data_return[KEY_RESULT] = RESULT_OK
+
     if DEBUG:
         print(os.environ)
+
+    RIGHT = "user"
+    if "remote_identity" in os.environ:
+        dest = RNS.hexrep(RNS.Destination.hash_from_name_and_identity("lxmf.delivery", bytes.fromhex(os.environ["remote_identity"])), delimit=False)
+        if dest != "" and dest in ADMINS:
+            RIGHT = "admin"
 
     data = os.environ[KEY_DATA]
     data = umsgpack.unpackb(base64.b64decode(data))
@@ -302,29 +388,35 @@ try:
     if DEBUG:
         print(data)
 
-    data_return[KEY_ENTRYS] = []
-    data_return[KEY_ENTRYS_COUNT] = db_count(filter=data["filter"], search=data["search"])
+    if "cmd" in data:
+        if RIGHT == "admin":
+            data_return.update(cmd(data["cmd"]))
+    else:
+        data_return[KEY_ENTRYS] = []
+        data_return[KEY_ENTRYS_COUNT] = db_count(filter=data["filter"], search=data["search"])
 
-    for entry in db_list(filter=data["filter"], search=data["search"], order=data["order"], limit=data["limit"], limit_start=data["limit_start"]):
-        if entry["dest"] in data["entrys"]:
-            if entry["ts_edit"] > data["entrys"][entry["dest"]]:
-                data_return[KEY_ENTRYS].append(entry)
-            del data["entrys"][entry["dest"]]
-        else:
-           data_return[KEY_ENTRYS].append(entry)
+        for entry in db_list(filter=data["filter"], search=data["search"], order=data["order"], limit=data["limit"], limit_start=data["limit_start"]):
+            if entry["dest"] in data["entrys"]:
+                if entry["ts_edit"] > data["entrys"][entry["dest"]]:
+                    data_return[KEY_ENTRYS].append(entry)
+                del data["entrys"][entry["dest"]]
+            else:
+               data_return[KEY_ENTRYS].append(entry)
 
-    for dest in data["entrys"]:
-        entry = db_get(dest=dest)
-        if entry:
-            if entry["ts_edit"] > data["entrys"][dest]:
-                data_return[KEY_ENTRYS].append(entry)
-        else:
-            data_return[KEY_ENTRYS].append({"dest": dest, "ts_edit": 0})
+        for dest in data["entrys"]:
+            entry = db_get(dest=dest)
+            if entry:
+                if entry["ts_edit"] > data["entrys"][dest]:
+                    data_return[KEY_ENTRYS].append(entry)
+            else:
+                data_return[KEY_ENTRYS].append({"dest": dest, "ts_edit": 0})
 
-    if len(data_return[KEY_ENTRYS]) == 0:
-        del data_return[KEY_ENTRYS]
+        if len(data_return[KEY_ENTRYS]) == 0:
+            del data_return[KEY_ENTRYS]
 
-    data_return[KEY_RESULT] = RESULT_OK
+        if RIGHT == "admin":
+            data_return[KEY_CMD] = ADMINS_CMD
+            data_return[KEY_CMD_ENTRY] = ADMINS_CMD_ENTRY
 
 except Exception as e:
     data_return[KEY_RESULT] = RESULT_ERROR

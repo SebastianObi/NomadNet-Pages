@@ -44,7 +44,7 @@ CACHE_TIME = 0 #0=No cache, None=Default
 DATE_TIME_FORMAT = "%Y-%m-%d"
 
 # Admin destinations (LXMF-Adresses)
-ADMINS = ["dece1ff47066e7e2ef55bf56e8b69aad", "aa6acab502ee7ab528605000e329be33"] #Array
+ADMINS = ["dece1ff47066e7e2ef55bf56e8b69aad"] #Array
 
 # Screen template - Main (Use on all pages)
 TEMPLATE_MAIN_ADMIN = """
@@ -207,7 +207,7 @@ import RNS.vendor.umsgpack as umsgpack
 FILE = os.path.splitext(os.path.basename(__file__))[0]
 
 if PATH == None:
-    PATH = os.path.expanduser("~")+"/."+FILE
+    PATH = os.path.expanduser("~")+"/.config/"+FILE
 
 DATA_FILE = PATH+"/data.data"
 

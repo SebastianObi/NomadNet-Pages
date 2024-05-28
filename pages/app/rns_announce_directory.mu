@@ -26,9 +26,19 @@ KEY_DATA = "var_data"
 KEY_ENTRYS = "rx_entrys"
 KEY_ENTRYS_COUNT = "rx_entrys_count"
 KEY_RESULT = "result"
+KEY_CMD = "cmd"
+KEY_CMD_ENTRY = "cmd_entry"
+KEY_CMD_RESULT = "cmd_result"
 
-RESULT_OK    = 0x01
 RESULT_ERROR = 0x00
+RESULT_OK    = 0x01
+
+# Admin destinations (LXMF-Adresses)
+ADMINS = ["dece1ff47066e7e2ef55bf56e8b69aad"] #Array
+
+# Admin CMDs
+ADMINS_CMD = [] #Array
+ADMINS_CMD_ENTRY = ["delete"] #Array
 
 
 ##############################################################################################################
@@ -55,7 +65,7 @@ import RNS.vendor.umsgpack as umsgpack
 FILE = os.path.splitext(os.path.basename(__file__))[0]
 
 if PATH == None:
-    PATH = os.path.expanduser("~")+"/."+FILE
+    PATH = os.path.expanduser("~")+"/.config/"+FILE
 
 DB = None
 
@@ -207,9 +217,9 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
         for entry in result:
             data.append({
                 "dest": entry[0],
-                "ts": entry[1],
-                "data": entry[2],
-                "type": entry[3]
+                "type": entry[1],
+                "ts": entry[2],
+                "data": entry[3]
             })
 
         return data
@@ -237,6 +247,56 @@ def db_count(filter=None, search=None):
         return result[0][0]
 
 
+def db_get(dest):
+    db = db_connect()
+    dbc = db.cursor()
+
+    query = "SELECT * FROM announce WHERE dest = ?"
+    dbc.execute(query, (dest,))
+
+    result = dbc.fetchall()
+
+    if len(result) < 1:
+        return None
+    else:
+        entry = result[0]
+        data = {
+            "dest": entry[0],
+            "type": entry[1],
+            "ts": entry[2],
+            "data": entry[3]
+        }
+        return data
+
+
+def db_delete(dest=None, dest_not=None):
+    db = db_connect()
+    dbc = db.cursor()
+
+    if dest:
+        query = "DELETE FROM announce WHERE dest = ?"
+        dbc.execute(query, (dest,))
+    elif dest_not:
+        query = "DELETE FROM announce WHERE dest != ?"
+        dbc.execute(query, (dest_not,))
+
+    db_commit()
+
+
+##############################################################################################################
+# CMD
+
+def cmd(cmd):
+    if cmd[0] == "delete":
+        db_delete(cmd[1])
+
+    entry = db_get(cmd[1])
+    if entry:
+        return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [entry]}
+    else:
+        return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [{"dest": cmd[1], "type": 0, "ts": 0, "data": ""}]}
+
+
 ##############################################################################################################
 # Program
 
@@ -244,8 +304,16 @@ def db_count(filter=None, search=None):
 data_return = {}
 
 try:
+    data_return[KEY_RESULT] = RESULT_OK
+
     if DEBUG:
         print(os.environ)
+
+    RIGHT = "user"
+    if "remote_identity" in os.environ:
+        dest = RNS.hexrep(RNS.Destination.hash_from_name_and_identity("lxmf.delivery", bytes.fromhex(os.environ["remote_identity"])), delimit=False)
+        if dest != "" and dest in ADMINS:
+            RIGHT = "admin"
 
     data = os.environ[KEY_DATA]
     data = umsgpack.unpackb(base64.b64decode(data))
@@ -253,10 +321,16 @@ try:
     if DEBUG:
         print(data)
 
-    data_return[KEY_ENTRYS] = db_list(filter=data["filter"], search=data["search"], order=data["order"], limit=data["limit"], limit_start=data["limit_start"])
-    data_return[KEY_ENTRYS_COUNT] = db_count(filter=data["filter"], search=data["search"])
+    if "cmd" in data:
+        if RIGHT == "admin":
+            data_return.update(cmd(data["cmd"]))
+    else:
+        data_return[KEY_ENTRYS] = db_list(filter=data["filter"], search=data["search"], order=data["order"], limit=data["limit"], limit_start=data["limit_start"])
+        data_return[KEY_ENTRYS_COUNT] = db_count(filter=data["filter"], search=data["search"])
 
-    data_return[KEY_RESULT] = RESULT_OK
+        if RIGHT == "admin":
+            data_return[KEY_CMD] = ADMINS_CMD
+            data_return[KEY_CMD_ENTRY] = ADMINS_CMD_ENTRY
 
 except Exception as e:
     data_return[KEY_RESULT] = RESULT_ERROR
