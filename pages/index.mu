@@ -40,7 +40,7 @@ FILES_INDEX_DEPTH = 255 #0=root, 255=all
 # Screen template - Main
 TEMPLATE_MAIN = """
 >`cFDG-Kommunikator
->>Willkommen auf der offiziellen Seite der FDG-Kommunikator App auf Sebastian's Knoten.
+>>Willkommen auf der offiziellen Seite der FDG-Kommunikator App.
 
 >>FDG-Wiki
 Offizieller Klon der Online Wiki

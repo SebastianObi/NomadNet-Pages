@@ -172,11 +172,40 @@ def db_filter(filter):
     return query
 
 
+def db_group(group):
+    if group == None:
+        return ""
+
+    querys = []
+
+    for key in group:
+        querys.append(db_sanitize(key))
+
+    if len(querys) > 0:
+        query = " GROUP BY "+", ".join(querys)
+    else:
+        query = ""
+
+    return query
+
+
 def db_order(order):
     if order == "A-ASC":
         query = " ORDER BY data ASC"
     elif order == "A-DESC":
         query = " ORDER BY data DESC"
+    elif order == "T-ASC":
+        query = " ORDER BY type ASC, ts ASC, data ASC"
+    elif order == "T-DESC":
+        query = " ORDER BY type DESC, ts ASC, data ASC"
+    elif order == "H-ASC":
+        query = " ORDER BY hop_count ASC, ts ASC, data ASC"
+    elif order == "H-DESC":
+        query = " ORDER BY hop_count DESC, ts ASC, data ASC"
+    elif order == "I-ASC":
+        query = " ORDER BY hop_interface ASC, ts ASC, data ASC"
+    elif order == "I-DESC":
+        query = " ORDER BY hop_interface DESC, ts ASC, data ASC"
     elif order == "ASC":
         query = " ORDER BY ts ASC, data ASC"
     elif order == "DESC":
@@ -187,11 +216,13 @@ def db_order(order):
     return query
 
 
-def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
+def db_list(filter=None, search=None, group=None, order=None, limit=None, limit_start=None):
     db = db_connect()
     dbc = db.cursor()
 
     query_filter = db_filter(filter)
+
+    query_group = db_group(group)
 
     query_order = db_order(order)
 
@@ -202,10 +233,10 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
 
     if search:
         search = "%"+search+"%"
-        query = "SELECT * FROM announce WHERE ts > 0 AND data LIKE ? COLLATE NOCASE"+query_filter+query_order+query_limit
+        query = "SELECT * FROM announce WHERE ts > 0 AND data LIKE ? COLLATE NOCASE"+query_filter+query_group+query_order+query_limit
         dbc.execute(query, (search,))
     else:
-        query = "SELECT * FROM announce WHERE ts > 0"+query_filter+query_order+query_limit
+        query = "SELECT * FROM announce WHERE ts > 0"+query_filter+query_group+query_order+query_limit
         dbc.execute(query)
 
     result = dbc.fetchall()
@@ -219,24 +250,27 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
                 "dest": entry[0],
                 "type": entry[1],
                 "ts": entry[2],
-                "data": entry[3]
+                "data": entry[3],
+                "hop_count": entry[4]
             })
 
         return data
 
 
-def db_count(filter=None, search=None):
+def db_count(filter=None, search=None, group=None):
     db = db_connect()
     dbc = db.cursor()
 
     query_filter = db_filter(filter)
 
+    query_group = db_group(group)
+
     if search:
         search = "%"+search+"%"
-        query = "SELECT COUNT(*) FROM announce WHERE ts > 0 AND data LIKE ? COLLATE NOCASE"+query_filter
+        query = "SELECT COUNT(*) FROM announce WHERE ts > 0 AND data LIKE ? COLLATE NOCASE"+query_filter+query_group
         dbc.execute(query, (search,))
     else:
-        query = "SELECT COUNT(*) FROM announce WHERE ts > 0"+query_filter
+        query = "SELECT COUNT(*) FROM announce WHERE ts > 0"+query_filter+query_group
         dbc.execute(query)
 
     result = dbc.fetchall()
@@ -264,7 +298,8 @@ def db_get(dest):
             "dest": entry[0],
             "type": entry[1],
             "ts": entry[2],
-            "data": entry[3]
+            "data": entry[3],
+            "hop_count": entry[4]
         }
         return data
 
@@ -325,8 +360,8 @@ try:
         if RIGHT == "admin":
             data_return.update(cmd(data["cmd"]))
     else:
-        data_return[KEY_ENTRYS] = db_list(filter=data["filter"], search=data["search"], order=data["order"], limit=data["limit"], limit_start=data["limit_start"])
-        data_return[KEY_ENTRYS_COUNT] = db_count(filter=data["filter"], search=data["search"])
+        data_return[KEY_ENTRYS] = db_list(filter=data["filter"], search=data["search"], group=data["group"], order=data["order"], limit=data["limit"], limit_start=data["limit_start"])
+        data_return[KEY_ENTRYS_COUNT] = db_count(filter=data["filter"], search=data["search"], group=data["group"])
 
         if RIGHT == "admin":
             data_return[KEY_CMD] = ADMINS_CMD
