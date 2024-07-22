@@ -42,11 +42,11 @@ DB_DATABASE = "testdb"
 DB_ENCODING = "utf8"
 
 # Admin destinations (LXMF-Adresses)
-ADMINS = ["dece1ff47066e7e2ef55bf56e8b69aad"] #Array
+ADMINS = [] #Array
 
 # Admin CMDs
 ADMINS_CMD = [] #Array
-ADMINS_CMD_ENTRY = ["role_0", "role_1", "role_2", "role_3", "state_0", "state_1", "state_2", "delete"] #Array
+ADMINS_CMD_ENTRY = [] #Array
 
 
 ##############################################################################################################
@@ -143,37 +143,32 @@ def db_filter(filter):
     querys = []
 
     if "display_name" in filter and filter["display_name"] != None:
-        querys.append("devices.device_display_name ILIKE '%"+db_sanitize(filter["display_name"])+"%'")
+        querys.append("services.service_display_name ILIKE '%"+db_sanitize(filter["display_name"])+"%'")
 
     if "city" in filter and filter["city"] != None:
-        querys.append("members.member_city ILIKE '%"+db_sanitize(filter["city"])+"%'")
+        querys.append("services.service_city ILIKE '%"+db_sanitize(filter["city"])+"%'")
 
     if "country" in filter and filter["country"] != None:
-        querys.append("members.member_country = '"+db_sanitize(filter["country"])+"'")
+        querys.append("services.service_country = '"+db_sanitize(filter["country"])+"'")
 
     if "state" in filter and filter["state"] != None:
-        querys.append("members.member_state = '"+db_sanitize(filter["state"])+"'")
+        querys.append("services.service_state = '"+db_sanitize(filter["state"])+"'")
 
-    if "occupation" in filter and filter["occupation"] != None:
-        querys.append("members.member_occupation ILIKE '%"+db_sanitize(filter["occupation"])+"%'")
-
-    if "skills" in filter and filter["skills"] != None:
-        querys.append("members.member_skills ILIKE '%"+db_sanitize(filter["skills"])+"%'")
-
-    if "tasks" in filter and filter["tasks"] != None:
-        querys.append("members.member_tasks ILIKE '%"+db_sanitize(filter["tasks"])+"%'")
-
-    if "wallet_address" in filter and filter["wallet_address"] != None:
-        querys.append("members.member_wallet_address ILIKE '%"+db_sanitize(filter["wallet_address"])+"%'")
+    if "type" in filter and filter["type"] != None:
+        if isinstance(filter["type"], int):
+            querys.append("services.service_type = '"+db_sanitize(filter["type"])+"'")
+        else:
+            array = [db_sanitize(key) for key in filter["type"]]
+            querys.append("(services.service_type = '"+"' OR services.service_type = '".join(array)+"')")
 
     if "auth_role" in filter and filter["auth_role"] != None:
-        querys.append("members.member_auth_role = '"+db_sanitize(filter["auth_role"])+"'")
+        querys.append("services.service_auth_role = '"+db_sanitize(filter["auth_role"])+"'")
 
     if "ts_min" in filter and filter["ts_min"] != None:
-        querys.append("members.member_ts_add >= "+datetime.datetime.fromtimestamp(filter["ts_min"]).strftime('%Y-%m-%d %H:%M:%S'))
+        querys.append("services.service_ts_add >= "+datetime.datetime.fromtimestamp(filter["ts_min"]).strftime('%Y-%m-%d %H:%M:%S'))
 
     if "ts_max" in filter and filter["ts_max"] != None:
-        querys.append("members.member_ts_add <= "+datetime.datetime.fromtimestamp(filter["ts_max"]).strftime('%Y-%m-%d %H:%M:%S'))
+        querys.append("services.service_ts_add <= "+datetime.datetime.fromtimestamp(filter["ts_max"]).strftime('%Y-%m-%d %H:%M:%S'))
 
     if len(querys) > 0:
         query = " AND "+" AND ".join(querys)
@@ -185,13 +180,13 @@ def db_filter(filter):
 
 def db_order(order):
     if order == "A-ASC":
-        query = " ORDER BY devices.device_display_name ASC"
+        query = " ORDER BY services.service_display_name ASC"
     elif order == "A-DESC":
-        query = " ORDER BY devices.device_display_name DESC"
+        query = " ORDER BY services.service_display_name DESC"
     elif order == "ASC":
-        query = " ORDER BY members.member_ts_add ASC, devices.device_display_name ASC"
+        query = " ORDER BY services.service_ts_add ASC, services.service_display_name ASC"
     elif order == "DESC":
-        query = " ORDER BY members.member_ts_add DESC, devices.device_display_name ASC"
+        query = " ORDER BY services.service_ts_add DESC, services.service_display_name ASC"
     else:
         query = ""
 
@@ -213,10 +208,10 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
 
     if search:
         search = "%"+search+"%"
-        query = "SELECT members.member_city, members.member_state, members.member_country, members.member_occupation, members.member_skills, members.member_tasks, members.member_wallet_address, members.member_auth_role, members.member_ts_add, members.member_ts_edit, devices.device_rns_id, devices.device_display_name FROM members LEFT JOIN devices ON devices.device_user_id = members.member_user_id WHERE members.member_user_id != '' AND (devices.device_display_name ILIKE %s OR members.member_city ILIKE %s OR members.member_occupation ILIKE %s OR members.member_skills ILIKE %s OR members.member_tasks ILIKE %s)"+query_filter+query_order+query_limit
-        dbc.execute(query, (search, search, search, search, search))
+        query = "SELECT services.service_rns_id, services.service_display_name, services.service_country, services.service_state, services.service_city, services.service_type, services.service_auth_role, services.service_ts_add, services.service_ts_edit FROM services WHERE services.service_rns_id != '' AND (services.service_display_name ILIKE %s OR services.service_city ILIKE %s)"+query_filter+query_order+query_limit
+        dbc.execute(query, (search, search))
     else:
-        query = "SELECT members.member_city, members.member_state, members.member_country, members.member_occupation, members.member_skills, members.member_tasks, members.member_wallet_address, members.member_auth_role, members.member_ts_add, members.member_ts_edit, devices.device_rns_id, devices.device_display_name FROM members LEFT JOIN devices ON devices.device_user_id = members.member_user_id WHERE members.member_user_id != ''"+query_filter+query_order+query_limit
+        query = "SELECT services.service_rns_id, services.service_display_name, services.service_country, services.service_state, services.service_city, services.service_type, services.service_auth_role, services.service_ts_add, services.service_ts_edit FROM services WHERE services.service_rns_id != ''"+query_filter+query_order+query_limit
         dbc.execute(query)
 
     result = dbc.fetchall()
@@ -226,21 +221,17 @@ def db_list(filter=None, search=None, order=None, limit=None, limit_start=None):
     else:
         data = []
         for entry in result:
-            if entry[10]:
-                data.append({
-                    "city": entry[0].strip(),
-                    "state": entry[1].strip(),
-                    "country": entry[2].strip(),
-                    "occupation": entry[3].strip(),
-                    "skills": entry[4].strip(),
-                    "tasks": entry[5].strip(),
-                    "wallet_address": entry[6].strip(),
-                    "auth_role": int(entry[7].strip()),
-                    "ts_add": entry[8].timestamp(),
-                    "ts_edit": entry[9].timestamp(),
-                    "dest": bytes.fromhex(entry[10].strip()),
-                    "display_name": entry[11].strip()
-                })
+            data.append({
+                "dest": bytes.fromhex(entry[0].strip()),
+                "display_name": entry[1].strip(),
+                "country": entry[2].strip(),
+                "state": entry[3].strip(),
+                "city": entry[4].strip(),
+                "type": entry[5].strip(),
+                "auth_role": int(entry[6].strip()),
+                "ts_add": entry[7].timestamp(),
+                "ts_edit": entry[8].timestamp(),
+            })
 
         return data
 
@@ -253,10 +244,10 @@ def db_count(filter=None, search=None):
 
     if search:
         search = "%"+search+"%"
-        query = "SELECT COUNT(*) FROM members LEFT JOIN devices ON devices.device_user_id = members.member_user_id WHERE members.member_user_id != '' AND (devices.device_display_name ILIKE %s OR members.member_city ILIKE %s OR members.member_occupation ILIKE %s OR members.member_skills ILIKE %s OR members.member_tasks ILIKE %s)"+query_filter
-        dbc.execute(query, (search, search, search, search, search))
+        query = "SELECT COUNT(*) FROM services WHERE services.service_rns_id != '' AND (services.service_display_name ILIKE %s OR services.service_city ILIKE %s)"+query_filter
+        dbc.execute(query, (search, search))
     else:
-        query = "SELECT COUNT(*) FROM members WHERE member_user_id != ''"+query_filter
+        query = "SELECT COUNT(*) FROM services WHERE services.service_rns_id != ''"+query_filter
         dbc.execute(query)
 
     result = dbc.fetchall()
@@ -271,7 +262,7 @@ def db_get(dest):
     db = db_connect()
     dbc = db.cursor()
 
-    query = "SELECT members.member_city, members.member_state, members.member_country, members.member_occupation, members.member_skills, members.member_tasks, members.member_wallet_address, members.member_auth_role, members.member_ts_add, members.member_ts_edit, devices.device_rns_id, devices.device_display_name FROM members LEFT JOIN devices ON devices.device_user_id = members.member_user_id WHERE devices.device_rns_id = %s"
+    query = "SELECT services.service_rns_id, services.service_display_name, services.service_country, services.service_state, services.service_city, services.service_type, services.service_auth_role, services.service_ts_add, services.service_ts_edit FROM services WHERE services.service_rns_id = %s"
     dbc.execute(query, (RNS.hexrep(dest, False),))
     result = dbc.fetchall()
 
@@ -280,33 +271,22 @@ def db_get(dest):
     else:
         entry = result[0]
         data = {
-            "city": entry[0].strip(),
-            "state": entry[1].strip(),
+            "dest": bytes.fromhex(entry[0].strip()),
+            "display_name": entry[1].strip(),
             "country": entry[2].strip(),
-            "occupation": entry[3].strip(),
-            "skills": entry[4].strip(),
-            "tasks": entry[5].strip(),
-            "wallet_address": entry[6].strip(),
-            "auth_role": int(entry[7].strip()),
-            "ts_add": entry[8].timestamp(),
-            "ts_edit": entry[9].timestamp(),
-            "dest": bytes.fromhex(entry[10].strip()),
-            "display_name": entry[11].strip()
+            "state": entry[3].strip(),
+            "city": entry[4].strip(),
+            "type": entry[5].strip(),
+            "auth_role": int(entry[6].strip()),
+            "ts_add": entry[7].timestamp(),
+            "ts_edit": entry[8].timestamp(),
         }
         return data
 
 
-def db_set(dest, role=None, state=None):
+def db_set(dest, state=None):
     db = db_connect()
     dbc = db.cursor()
-
-    if role != None:
-        query = "UPDATE members SET member_ts_edit = %s, member_auth_role = %s, member_update = '1' WHERE member_user_id = (SELECT device_user_id FROM devices WHERE device_rns_id = %s)"
-        dbc.execute(query, (datetime.datetime.now(datetime.timezone.utc), str(role), RNS.hexrep(dest, False)))
-
-    if state != None:
-        query = "UPDATE members SET member_ts_edit = %s, member_auth_state = %s, member_update = '1' WHERE member_user_id = (SELECT device_user_id FROM devices WHERE device_rns_id = %s)"
-        dbc.execute(query, (datetime.datetime.now(datetime.timezone.utc), str(state), RNS.hexrep(dest, False)))
 
     db_commit()
 
@@ -315,16 +295,8 @@ def db_delete(dest):
     db = db_connect()
     dbc = db.cursor()
 
-    query = "SELECT device_user_id FROM devices WHERE device_rns_id = %s"
+    query = "DELETE FROM services WHERE service_rns_id = %s"
     dbc.execute(query, (RNS.hexrep(dest, False),))
-    result = dbc.fetchall()
-
-    if len(result) == 1:
-        query = "DELETE FROM devices WHERE device_user_id = %s"
-        dbc.execute(query, (result[0][0],))
-
-        query = "DELETE FROM members WHERE member_user_id = %s"
-        dbc.execute(query, (result[0][0],))
 
     db_commit()
 
@@ -333,27 +305,6 @@ def db_delete(dest):
 # CMD
 
 def cmd(cmd):
-    if cmd[0] == "role_0":
-        db_set(cmd[1], role=0)
-
-    if cmd[0] == "role_1":
-        db_set(cmd[1], role=1)
-
-    if cmd[0] == "role_2":
-        db_set(cmd[1], role=2)
-
-    if cmd[0] == "role_3":
-        db_set(cmd[1], role=3)
-
-    if cmd[0] == "state_0":
-        db_set(cmd[1], state=0)
-
-    if cmd[0] == "state_1":
-        db_set(cmd[1], state=1)
-
-    if cmd[0] == "state_2":
-        db_set(cmd[1], state=2)
-
     if cmd[0] == "delete":
         db_delete(cmd[1])
 

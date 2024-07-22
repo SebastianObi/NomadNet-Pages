@@ -166,6 +166,13 @@ def db_filter(filter):
     if "wallet_address" in filter and filter["wallet_address"] != None:
         querys.append("members.member_wallet_address ILIKE '%"+db_sanitize(filter["wallet_address"])+"%'")
 
+    if "type" in filter and filter["type"] != None:
+        if isinstance(filter["type"], int):
+            querys.append("members.member_type = '"+db_sanitize(filter["type"])+"'")
+        else:
+            array = [db_sanitize(key) for key in filter["type"]]
+            querys.append("(members.member_type = '"+"' OR members.member_type = '".join(array)+"')")
+
     if "auth_role" in filter and filter["auth_role"] != None:
         querys.append("members.member_auth_role = '"+db_sanitize(filter["auth_role"])+"'")
 

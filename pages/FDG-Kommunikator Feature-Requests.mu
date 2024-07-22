@@ -127,7 +127,7 @@ import uuid
 
 #### Reticulum ####
 import RNS
-import RNS.vendor.umsgpack as umsgpack
+import RNS.vendor.umsgpack as msgpack
 
 
 ##############################################################################################################
@@ -171,7 +171,7 @@ if not os.path.isdir(PATH):
 if os.path.isfile(DATA_FILE):
     try:
         fh = open(DATA_FILE , "rb")
-        DATA = umsgpack.unpackb(fh.read())
+        DATA = msgpack.unpackb(fh.read())
         fh.close()
     except Exception as e:
         exit
@@ -205,7 +205,7 @@ if PAGE == "main":
             if DEST not in DATA[os.environ["var_id"]]["votes"]:
                 DATA[os.environ["var_id"]]["votes"].append(DEST)
                 fh = open(DATA_FILE, "wb")
-                fh.write(umsgpack.packb(DATA))
+                fh.write(msgpack.packb(DATA))
                 fh.close()
                 MSG = MSG_VOTE_ADD_OK
             else:
@@ -219,7 +219,7 @@ if PAGE == "main":
             if DEST in DATA[os.environ["var_id"]]["votes"]:
                 DATA[os.environ["var_id"]]["votes"].remove(DEST)
                 fh = open(DATA_FILE, "wb")
-                fh.write(umsgpack.packb(DATA))
+                fh.write(msgpack.packb(DATA))
                 fh.close()
                 MSG = MSG_VOTE_DELETE_OK
             else:
@@ -244,7 +244,7 @@ if PAGE == "main":
                 if "field_state_text" in os.environ:
                     DATA[os.environ["var_id"]]["state_text"] = os.environ["field_state_text"].strip().replace("\n", " ")
             fh = open(DATA_FILE, "wb")
-            fh.write(umsgpack.packb(DATA))
+            fh.write(msgpack.packb(DATA))
             fh.close()
         except:
             if "var_delete" in os.environ:
@@ -260,7 +260,7 @@ if PAGE == "main":
             if "field_text" in os.environ:
                 DATA[os.environ["var_id"]]["text"] = os.environ["field_text"].strip().replace("\n", " ")
             fh = open(DATA_FILE, "wb")
-            fh.write(umsgpack.packb(DATA))
+            fh.write(msgpack.packb(DATA))
             fh.close()
             MSG = MSG_EDIT_OK
         except:
@@ -334,7 +334,7 @@ elif PAGE == "add":
                         del DATA[key]
 
                 fh = open(DATA_FILE, "wb")
-                fh.write(umsgpack.packb(DATA))
+                fh.write(msgpack.packb(DATA))
                 fh.close()
 
                 MSG = MSG_ADD_OK

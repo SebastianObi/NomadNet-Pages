@@ -64,7 +64,7 @@ import sqlite3
 
 #### Reticulum ####
 import RNS
-import RNS.vendor.umsgpack as umsgpack
+import RNS.vendor.umsgpack as msgpack
 
 
 ##############################################################################################################

@@ -104,7 +104,7 @@ import uuid
 
 #### Reticulum ####
 import RNS
-import RNS.vendor.umsgpack as umsgpack
+import RNS.vendor.umsgpack as msgpack
 
 
 ##############################################################################################################
@@ -149,7 +149,7 @@ if not os.path.isdir(PATH):
 if os.path.isfile(DATA_FILE):
     try:
         fh = open(DATA_FILE , "rb")
-        DATA = umsgpack.unpackb(fh.read())
+        DATA = msgpack.unpackb(fh.read())
         fh.close()
     except Exception as e:
         exit
@@ -182,7 +182,7 @@ if "var_action" in os.environ and os.environ["var_action"] == "add":
                     del DATA[key]
 
             fh = open(DATA_FILE, "wb")
-            fh.write(umsgpack.packb(DATA))
+            fh.write(msgpack.packb(DATA))
             fh.close()
 
             MSG = MSG_ADD_OK
@@ -209,7 +209,7 @@ elif (RIGHT == "admin" or RIGHT == "owner") and "var_id" in os.environ and os.en
 
         if "var_delete" in os.environ or "var_edit" in os.environ:
             fh = open(DATA_FILE, "wb")
-            fh.write(umsgpack.packb(DATA))
+            fh.write(msgpack.packb(DATA))
             fh.close()
     except:
         if "var_delete" in os.environ:

@@ -55,7 +55,7 @@ import sqlite3
 
 #### Reticulum ####
 import RNS
-import RNS.vendor.umsgpack as umsgpack
+import RNS.vendor.umsgpack as msgpack
 
 
 ##############################################################################################################
@@ -329,7 +329,7 @@ def cmd(cmd):
     if entry:
         return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [entry]}
     else:
-        return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [{"dest": cmd[1], "type": 0, "ts": 0, "data": ""}]}
+        return {KEY_CMD_RESULT: RESULT_OK, KEY_ENTRYS: [{"dest": cmd[1], "type": 0, "ts": 0, "data": "", "hop_count": 0}]}
 
 
 ##############################################################################################################
@@ -351,7 +351,7 @@ try:
             RIGHT = "admin"
 
     data = os.environ[KEY_DATA]
-    data = umsgpack.unpackb(base64.b64decode(data))
+    data = msgpack.unpackb(base64.b64decode(data))
 
     if DEBUG:
         print(data)
@@ -370,5 +370,5 @@ try:
 except Exception as e:
     data_return[KEY_RESULT] = RESULT_ERROR
 
-sys.stdout.buffer.write(umsgpack.packb(data_return))
+sys.stdout.buffer.write(msgpack.packb(data_return))
 sys.stdout.flush() 
