@@ -22,21 +22,22 @@ DEBUG = False #True/False
 # Alternative path
 PATH = None
 
-KEY_DATA = "var_data"
-KEY_ENTRYS = "rx_entrys"
-KEY_ENTRYS_COUNT = "rx_entrys_count"
-KEY_RESULT = "result"
-KEY_CMD = "cmd"
-KEY_CMD_ENTRY = "cmd_entry"
-KEY_CMD_RESULT = "cmd_result"
+KEY_RESULT        = 0x0A # Result
+KEY_RESULT_REASON = 0x0B # Result - Reason
+KEY_DATA          = "var_data"
+KEY_ENTRYS        = "rx_entrys"
+KEY_ENTRYS_COUNT  = "rx_entrys_count"
+KEY_CMD           = "cmd"
+KEY_CMD_ENTRY     = "cmd_entry"
+KEY_CMD_RESULT    = "cmd_result"
 
 RESULT_ERROR = 0x00
 RESULT_OK    = 0x01
 
 # Database
-DB_HOST = "192.168.10.229"
-DB_PORT = 5432
-DB_USER = "postgres"
+DB_HOST     = "192.168.10.229"
+DB_PORT     = 5432
+DB_USER     = "postgres"
 DB_PASSWORD = "p@ssw0rd"
 DB_DATABASE = "testdb"
 DB_ENCODING = "utf8"
@@ -45,7 +46,7 @@ DB_ENCODING = "utf8"
 ADMINS = ["dece1ff47066e7e2ef55bf56e8b69aad"] #Array
 
 # Admin CMDs
-ADMINS_CMD = [] #Array
+ADMINS_CMD       = [] #Array
 ADMINS_CMD_ENTRY = ["role_0", "role_1", "role_2", "role_3", "state_0", "state_1", "state_2", "delete"] #Array
 
 
